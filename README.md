@@ -2,6 +2,8 @@
 
 This project focuses on analyzing the nuclear translocation of YAP (protein) using a pretrained [Cellpose 2.0](https://www.nature.com/articles/s41592-022-01663-4) model for 3D instance segmentation of nuclei and morphological operations from [pyclesperanto](https://github.com/clEsperanto/pyclesperanto_prototype). The primary goal is to quantify the intensity of YAP in the nucleus and cytoplasm across various experimental conditions, based on this a ratio is calculated to elucidate where YAP localizes.
 
+![unfiltered_organoid_labels](./assets/unfiltered_organoids.png)
+
 **Workflow Summary:**
 
 **1. Image Input and Preprocessing:**
@@ -24,7 +26,7 @@ This project focuses on analyzing the nuclear translocation of YAP (protein) usi
 
 - Cellpose 2.0 pre-trained 'nuclei' model is used to segment nuclei in 3D.
 
-- Filter out small artifacts and merged nuclei based on size.
+- Filter out small artifacts and merged nuclei based on volume in order to generate meaningful cytoplams in the next step.
 
 **4. Cytoplasm Simulation:**
 

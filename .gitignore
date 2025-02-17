@@ -6,6 +6,7 @@ __pycache__/
 # Data folder
 raw_data
 raw_data_2
+raw_data_
 
 # Jupyter Notebook
 .ipynb_checkpoints
