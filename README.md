@@ -42,6 +42,14 @@ This project focuses on analyzing the nuclear translocation of YAP (protein) usi
 
 - Final output is a collection of DataFrames containing intensity measurements and calculated nuclei/cytoplasm intensity ratios for YAP across all images.
 
+<h2>Raw Data Download</h2>
+
+1. [Contact Me](mailto:alberto.d.sanchez@ntnu.no) to obtain a fresh working S3 bucket pre-signed link.
+
+2. Paste the link inside <code>0_data_download.ipynb</code> notebook after <code>presigned_url</code>.
+
+3. Run the notebook to download and extract the data.
+
 <h2>Instructions</h2>
 
 1. In order to run these Jupyter notebooks you will need to familiarize yourself with the use of Python virtual environments using Mamba. See instructions [here](https://biapol.github.io/blog/mara_lampert/getting_started_with_mambaforge_and_python/readme.html).
