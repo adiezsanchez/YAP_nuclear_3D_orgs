@@ -10,7 +10,7 @@ This project focuses on analyzing the nuclear translocation of YAP (protein) usi
 
 - Raw images in .czi format are read, and experimental metadata (experiment, mouse, treatment, and replica IDs) is extracted from filenames.
 
-- Images are sliced for size reduction to improve processing times without lossless compression.
+- Images can be downsampled in xy for size reduction to improve processing times (no downsampling for this dataset).
 
 **2. Channel Extraction:**
 
