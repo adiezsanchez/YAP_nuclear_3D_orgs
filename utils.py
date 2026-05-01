@@ -133,36 +133,37 @@ def predict_nuclei_labels(image: np.ndarray, rescale_factor: float, nuclei_chann
 
 def simulate_cytoplasm(
     nuclei_labels: np.ndarray,
-    dilation_radius: int = 2,
-    erosion_radius: int = 0
+    cytoplasm_thickness: int = 2,
+    nuclei_padding: int = 0
 ) -> np.ndarray:
     """
-    Simulate cytoplasmic regions by dilating nuclei label masks, with optional erosion to handle touching nuclei.
+    Generates approximate cytoplasmic regions surrounding each nucleus by dilating nuclear label masks.
+    Optionally, an initial padding can be applied to the nuclei before cytoplasm simulation. 
+    The 'cytoplasm_thickness' parameter defines how many pixels/voxels outward from the nucleus (or optionally padded nucleus) 
+    to assign cytoplasmic regions. The resulting cytoplasm region for each nucleus 
+    is assigned the same label, excluding the nucleus itself. Background remains 0.
 
     Args:
-        nuclei_labels (np.ndarray): Labeled image of nuclei, where 0 is background and positive integers are nucleus labels.
-        dilation_radius (int, optional): Radius in pixels/voxels to dilate the nuclei labels to approximate cytoplasm. Defaults to 2.
-        erosion_radius (int, optional): Radius to optionally erode the nuclei labels before dilation,
-            which helps prevent merged cytoplasm between touching nuclei. Defaults to 0 (no erosion).
+        nuclei_labels (np.ndarray): Integer-labeled nuclei mask (0 = background, >0 = nucleus).
+        cytoplasm_thickness (int, optional): Number of pixels/voxels outward from the (optionally padded) 
+            nucleus used to define the cytoplasmic region. Defaults to 2.
+        nuclei_padding (int, optional): Number of pixels/voxels to optionally expand nuclei before cytoplasm simulation. 
+            Useful to create a buffer zone between nuclei and cytoplasm. Defaults to 0 (no padding).
 
     Returns:
-        np.ndarray: Labeled image where each region surrounding a nucleus label (the approximate cytoplasm) is assigned the same label,
-            with nuclei themselves excluded. Background is 0.
+        np.ndarray: Integer-labeled cytoplasmic regions, where each region surrounding a nucleus receives the nucleus's label, and the nuclei remain excluded (set to 0).
     """
-    if erosion_radius >= 1:
-        # Erode nuclei_labels to maintain a closed cytoplasmic region when labels are touching (if needed)
-        eroded_nuclei_labels = cle.erode_labels(nuclei_labels, radius=erosion_radius)
-        eroded_nuclei_labels = cle.pull(eroded_nuclei_labels)
-        nuclei_labels = eroded_nuclei_labels
+    labels_for_cytoplasm = nuclei_labels
+    if nuclei_padding > 0:
+        # Optionally pre-dilate nuclei to create a buffer between nuclei and cytoplasm border
+        padded_nuclei_labels = cle.dilate_labels(nuclei_labels, radius=nuclei_padding)
+        labels_for_cytoplasm = cle.pull(padded_nuclei_labels)
 
-    # Dilate nuclei labels to simulate the surrounding cytoplasm
-    cyto_nuclei_labels = cle.dilate_labels(nuclei_labels, radius=dilation_radius)
-    cytoplasm = cle.pull(cyto_nuclei_labels)
+    # Dilate labels outward by cytoplasm_thickness to generate cytoplasmic regions
+    cyto_labels = cle.dilate_labels(labels_for_cytoplasm, radius=cytoplasm_thickness)
+    cytoplasm = cle.pull(cyto_labels)
 
-    # Create a binary mask of the nuclei
-    nuclei_mask = nuclei_labels > 0
-
-    # Set the corresponding values in the cyto_nuclei_labels array to zero
-    cytoplasm[nuclei_mask] = 0
+    # Remove (optionally padded) nucleus core regions by setting them to background (zero)
+    cytoplasm[labels_for_cytoplasm > 0] = 0
 
     return cytoplasm
