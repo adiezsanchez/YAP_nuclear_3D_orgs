@@ -62,7 +62,7 @@ def extract_organoid_stats_and_merge(
             small_to_big.setdefault(s, set()).add(b)
 
     # Add organoid column to props_df
-    props_df["organoid"] = (
+    props_df["organoid_id"] = (
         props_df["label"]
         .map(lambda s: next(iter(small_to_big[s]))
             if s in small_to_big and len(small_to_big[s]) == 1
@@ -70,13 +70,13 @@ def extract_organoid_stats_and_merge(
         .astype(int)
     )
 
-    # Reorder so it appears after well_id and before label
+    # Reorder so it appears after label (no well_id in input)
     cols = list(props_df.columns)
-    cols.insert(cols.index("well_id") + 1, cols.pop(cols.index("organoid")))
+    cols.insert(cols.index("label") + 1, cols.pop(cols.index("organoid_id")))
     props_df = props_df[cols]
 
     # Cells with no organoid
-    n_orphans = (props_df["organoid"] == 0).sum()
+    n_orphans = (props_df["organoid_id"] == 0).sum()
 
     # Calculate percentage of orphan cells to total cells (use row count to reflect true cells after filtering)
     total_cells = len(props_df)
@@ -114,9 +114,9 @@ def extract_organoid_stats_and_merge(
     organoids_props_df = pd.DataFrame(organoid_props)
 
     # Rename columns from actual DataFrame columns (covers array properties like inertia_tensor_eigvals-0, -1)
-    prefix = "organoid"
+    prefix = "organoid_id"
     rename_map = {
-        col: "organoid" if col == "label" else f"{prefix}_{col}"
+        col: "organoid_id" if col == "label" else f"{prefix}_{col}"
         for col in organoids_props_df.columns
     }
 
@@ -126,7 +126,7 @@ def extract_organoid_stats_and_merge(
     final_df = props_df.merge(
         organoids_props_df,
         how="left",
-        on="organoid"
+        on="organoid_id"
     )
 
     return final_df
