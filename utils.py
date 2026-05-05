@@ -1,7 +1,9 @@
 from czifile import CziFile
 import numpy as np
+import pandas as pd
 import pyclesperanto_prototype as cle
 from skimage.segmentation import relabel_sequential
+from skimage.morphology import remove_small_objects
 from xml.etree import ElementTree as ET
 from cellpose import models, core, io
 from typing import Optional, Tuple
@@ -168,6 +170,53 @@ def simulate_cytoplasm(
     cytoplasm[labels_for_cytoplasm > 0] = 0
 
     return cytoplasm
+
+def segment_organoids_from_cp_labels(
+    nuclei_labels: np.ndarray,
+    cytoplasm_thickness: int,
+    min_size: int = 15000
+) -> np.ndarray:
+    """
+    Segment whole organoids from a 3D image using individual Cellpose nuclei labels as seeds.
+
+    This function creates cytoplasmic regions around nuclei, projects them onto 2D,
+    merges touching regions to form organoids, and post-processes the result to remove small objects
+    and close holes. The resulting organoid labels are expanded back to 3D.
+
+    Args:
+        nuclei_labels (np.ndarray): Integer-labeled nuclei mask (3D; 0 = background, >0 = nucleus).
+        cytoplasm_thickness (int): Number of pixels/voxels to dilate nuclei for simulating cytoplasm.
+        min_size (int, optional): Minimum pixel area for an organoid in 2D projection. Organisms smaller
+            than this are removed. Defaults to 15000.
+
+    Returns:
+        np.ndarray: Integer-labeled 3D organoid mask. Each organoid receives a unique label
+            (0 = background), broadcast along the z-axis.
+    """
+    # Generate cytoplasm labels via dilation
+    cytoplasm_labels = cle.dilate_labels(nuclei_labels, radius=cytoplasm_thickness)
+
+    # Maximum projection across z-axis to flatten 3D labels into 2D space
+    mip_labels = np.max(cytoplasm_labels, axis=0)
+
+    # Merge touching labels to establish first organoid entities
+    merged_mip = cle.merge_touching_labels(mip_labels)
+
+    # Dilation-Erosion cycle to close holes
+    dilated_labels = cle.dilate_labels(merged_mip, radius=5)
+    eroded_labels = cle.erode_labels(dilated_labels, radius=1)
+
+    # Pull from GPU in order to filter out small disconnected components and relabel using skimage
+    org_labels = cle.pull(eroded_labels)
+    org_labels = remove_small_objects(org_labels, min_size)
+
+    # Relabel starting from 1
+    organoid_labels = relabel_sequential(org_labels)[0]
+
+    # Make organoid labels 3D (extend across z-axis)
+    organoid_labels = np.broadcast_to(organoid_labels, cytoplasm_labels.shape)
+
+    return organoid_labels
 
 def map_df_column_to_labels(
     nuclei_labels: np.ndarray,
