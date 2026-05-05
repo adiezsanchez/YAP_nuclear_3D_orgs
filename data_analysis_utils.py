@@ -39,7 +39,8 @@ def _map_small_to_big(
 def extract_organoid_stats_and_merge(
     nuclei_labels: np.ndarray,
     organoid_labels: np.ndarray,
-    props_df: pd.DataFrame
+    props_df: pd.DataFrame,
+    print_log: bool = False
 ) -> pd.DataFrame:
     """
     Map each cell label to its corresponding organoid, extract organoid region properties, and merge these with per-cell statistics.
@@ -48,7 +49,7 @@ def extract_organoid_stats_and_merge(
         nuclei_labels (np.ndarray): Integer-labeled nuclei mask (3D; 0 = background, >0 = nucleus).
         organoid_labels (np.ndarray): Integer-labeled organoid mask (3D; 0 = background, >0 = organoid).
         props_df (pd.DataFrame): DataFrame containing per-nucleus statistics with a 'label' and 'well_id' column.
-
+        print_log (bool, optional): Whether to print the log of the orphan cells mapping. Defaults to False.
     Returns:
         pd.DataFrame: Merged DataFrame containing both per-cell information and associated organoid-level statistics. Includes a new 'organoid' column mapping each cell to its organoid.
     """
@@ -82,7 +83,8 @@ def extract_organoid_stats_and_merge(
     total_cells = len(props_df)
     perc_orphan = round(((n_orphans / total_cells) * 100), 2)
 
-    print(f"Cells mapped to no organoid: {n_orphans} - {perc_orphan}% of total cells ({total_cells})")
+    if print_log:
+        print(f"Cells mapped to no organoid: {n_orphans} - {perc_orphan}% of total cells ({total_cells})")
 
     # Extract area information at an organoid level and merge with the existing props_df
     organoid_regionprops_properties = [
