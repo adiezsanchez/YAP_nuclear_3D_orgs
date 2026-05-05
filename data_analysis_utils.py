@@ -1,9 +1,135 @@
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import scipy.stats as stats
 from pathlib import Path
+from skimage.measure import regionprops_table
 
+def _map_small_to_big(
+    labels_small: np.ndarray,
+    labels_big: np.ndarray,
+) -> dict:
+    """
+    Map each label in a small-labeled array (e.g., cells) to the corresponding region in a big-labeled array (e.g., organoids).
+
+    Args:
+        labels_small (np.ndarray): Labeled image (e.g., cells) whose labels will be mapped.
+        labels_big (np.ndarray): Labeled image (e.g., organoids) representing larger encompassing regions (parent labels).
+
+    Returns:
+        dict: Dictionary mapping each big label (int) to a set of small labels (set of int) it contains.
+    """
+    mask = labels_small > 0
+    pairs = np.stack([
+        labels_small[mask],
+        labels_big[mask]
+    ], axis=1)
+
+    # remove background overlaps
+    pairs = pairs[pairs[:, 1] > 0]
+
+    mapping = {}
+    for s, b in pairs:
+        mapping.setdefault(int(b), set()).add(int(s))
+
+    return mapping
+
+
+def extract_organoid_stats_and_merge(
+    nuclei_labels: np.ndarray,
+    organoid_labels: np.ndarray,
+    props_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Map each cell label to its corresponding organoid, extract organoid region properties, and merge these with per-cell statistics.
+
+    Args:
+        nuclei_labels (np.ndarray): Integer-labeled nuclei mask (3D; 0 = background, >0 = nucleus).
+        organoid_labels (np.ndarray): Integer-labeled organoid mask (3D; 0 = background, >0 = organoid).
+        props_df (pd.DataFrame): DataFrame containing per-nucleus statistics with a 'label' and 'well_id' column.
+
+    Returns:
+        pd.DataFrame: Merged DataFrame containing both per-cell information and associated organoid-level statistics. Includes a new 'organoid' column mapping each cell to its organoid.
+    """
+    # Map each cell label to each corresponding organoid (mapping in 3D space)
+    mapping = _map_small_to_big(nuclei_labels, organoid_labels)
+
+    # Invert mapping to map to props_df
+    small_to_big = {}
+    for b, smalls in mapping.items():
+        for s in smalls:
+            small_to_big.setdefault(s, set()).add(b)
+
+    # Add organoid column to props_df
+    props_df["organoid"] = (
+        props_df["label"]
+        .map(lambda s: next(iter(small_to_big[s]))
+            if s in small_to_big and len(small_to_big[s]) == 1
+            else 0)
+        .astype(int)
+    )
+
+    # Reorder so it appears after well_id and before label
+    cols = list(props_df.columns)
+    cols.insert(cols.index("well_id") + 1, cols.pop(cols.index("organoid")))
+    props_df = props_df[cols]
+
+    # Cells with no organoid
+    n_orphans = (props_df["organoid"] == 0).sum()
+
+    # Calculate percentage of orphan cells to total cells (use row count to reflect true cells after filtering)
+    total_cells = len(props_df)
+    perc_orphan = round(((n_orphans / total_cells) * 100), 2)
+
+    print(f"Cells mapped to no organoid: {n_orphans} - {perc_orphan}% of total cells ({total_cells})")
+
+    # Extract area information at an organoid level and merge with the existing props_df
+    organoid_regionprops_properties = [
+        "label",                         # region identifier
+        "area",                          # number of pixels (region size in 2D)
+        "area_bbox",                     # area of axis-aligned bounding box (width × height)
+        "area_convex",                   # area of convex hull of the region
+        "area_filled",                   # area after filling holes
+        "axis_major_length",             # length of major axis from inertia tensor (elongation)
+        "axis_minor_length",             # length of minor axis (second principal axis in 2D)
+        "equivalent_diameter_area",      # diameter of circle with same area as region
+        "perimeter",                     # total boundary length (boundary complexity)
+        "eccentricity",                  # round (0) → elongated (1), from ellipse fit
+        "euler_number",                  # topology: #objects − #holes (connectivity in 2D)
+        "extent",                        # area / bounding-box area (how well the box is filled)
+        "feret_diameter_max",            # maximum Feret (caliper) diameter
+        "solidity",                      # area / convex-hull area (compact vs lobed)
+        "inertia_tensor_eigvals",        # eigenvalues of inertia tensor (2 values in 2D: shape/orientation)
+    ]
+
+    # Extract organoid features (flattened 2D labels)
+    organoid_2d_labels = np.max(organoid_labels, axis=0)
+    organoid_props = regionprops_table(
+        label_image=organoid_2d_labels,
+        properties=organoid_regionprops_properties,
+    )
+
+    # Convert to dataframe
+    organoids_props_df = pd.DataFrame(organoid_props)
+
+    # Rename columns from actual DataFrame columns (covers array properties like inertia_tensor_eigvals-0, -1)
+    prefix = "organoid"
+    rename_map = {
+        col: "organoid" if col == "label" else f"{prefix}_{col}"
+        for col in organoids_props_df.columns
+    }
+
+    organoids_props_df.rename(columns=rename_map, inplace=True)
+
+    # Merge organoid_props and cell_props Dataframes
+    final_df = props_df.merge(
+        organoids_props_df,
+        how="left",
+        on="organoid"
+    )
+
+    return final_df
 
 def _extract_csv_analysis_context(per_label_results_csv_path: Path | str) -> tuple[str, str, str]:
     """
