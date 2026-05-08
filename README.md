@@ -61,13 +61,17 @@ After installing pixi, type the following command and enjoy the fastest venv man
 - Computes technical replicate means (`data_analysis_utils.calculate_technical_replicates_mean_values`) and plots treatment-level boxplots (`data_analysis_utils.plot_boxplots_by_features`).
 - Computes biological replicate means (`data_analysis_utils.calculate_biological_replicates_mean_values`), plots treatment-ordered scatter + group means (`data_analysis_utils.plot_scatter_nuclei_cyto_ratio`), and runs Welch t-tests/1-way ANOVA summaries (`data_analysis_utils.calculate_statistical_tests`).
 
-<h2>Raw Data Download</h2>
+<h2>Raw Data Download (.czi)</h2>
 
 1. [Contact Me](mailto:alberto.d.sanchez@ntnu.no) to obtain a fresh working S3 bucket pre-signed link.
 
 2. Paste the link inside <code>0_data_download.ipynb</code> notebook after <code>presigned_url</code>.
 
 3. Run the notebook to download and extract the data.
+
+<h2>Bioimage Archive deposition</h2>
+
+Placeholder for Bioimage Archive repository
 
 <h2>Materials and Methods: Image Analysis</h2>
 
@@ -86,3 +90,7 @@ If you are using this pipeline to analyze your bioimage data you can easily incl
 This is an example from APA, the most popular citation style:
 
 <code>Díez-Sánchez, A. (2026). adiezsanchez/YAP_nuclear_3D_orgs: YAP-LOC3D (v1.0.0). Zenodo. </code>
+
+<h2>Related publications</h2>
+
+Placeholder for publications citing this pipeline
