@@ -1,6 +1,6 @@
 <h1>(YAP-LOC3D) - Quantifying Nuclear Translocation of YAP in 3D Organoids Using CellposeSAM and Pyclesperanto-Based Morphological Operations</h1>
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20081226.svg)](https://doi.org/10.5281/zenodo.20081226)
+[![DOI](https://zenodo.org/badge/817811539.svg)](https://doi.org/10.5281/zenodo.20081225)
 
 This project focuses on analyzing the nuclear translocation of YAP (protein) using a pretrained [CellposeSAM](https://www.biorxiv.org/content/10.1101/2025.04.28.651001v1) model for 3D instance segmentation of nuclei and morphological operations from [pyclesperanto](https://github.com/clEsperanto/pyclesperanto_prototype) to simulate the cytoplasm surrounding the nuclei. The primary goal is to quantify the intensity of YAP in the nucleus and cytoplasm across various experimental conditions, based on this a ratio is calculated to elucidate where YAP localizes.
 
@@ -87,7 +87,7 @@ If you are using this pipeline to analyze your bioimage data you can easily incl
 
 - For APA and BibTex style scroll to the top of this page, above the Release section and under About click on the cite this repository.
 
-- For APA, Harvard, MLA, Vancouver, Chicago and IEEE styles, visit [Zenodo](https://doi.org/10.5281/zenodo.20081226) and in the right panel at the bottom you will find the Citation section. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20081226.svg)](https://doi.org/10.5281/zenodo.20081226)
+- For APA, Harvard, MLA, Vancouver, Chicago and IEEE styles, visit [Zenodo](https://doi.org/10.5281/zenodo.20081226) and in the right panel at the bottom you will find the Citation section. [![DOI](https://zenodo.org/badge/817811539.svg)](https://doi.org/10.5281/zenodo.20081225)
 
 This is an example from APA, the most popular citation style:
 
